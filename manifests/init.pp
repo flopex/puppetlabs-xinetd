@@ -11,6 +11,7 @@
 #
 class xinetd (
   $confdir       = $xinetd::params::confdir,
+  $confdir_purge = false,
   $conffile      = $xinetd::params::conffile,
   $package_name  = $xinetd::params::package_name,
   $service_name  = $xinetd::params::service_name
@@ -26,6 +27,9 @@ class xinetd (
   file { $confdir:
     ensure  => directory,
     mode    => '0755',
+    recurse => $confdir_purge,
+    purge   => $confdir_purge,
+    force   => $confdir_purge,
   }
 
   # Template uses:
