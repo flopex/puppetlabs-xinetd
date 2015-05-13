@@ -49,7 +49,8 @@ class xinetd (
     ensure     => running,
     enable     => true,
     hasrestart => false,
-    restart    => 'bash -c "/etc/init.d/xinetd stop ; sleep 7 ; /etc/init.d/xinetd start"',
+    # LOL OPS-774. xinetd's init script can die in a fucking fire
+    restart    => 'bash -c "/etc/init.d/xinetd stop ; killall xinetd ; sleep 7 ; /etc/init.d/xinetd start"',
     hasstatus  => true,
     require    => File[$conffile],
   }
