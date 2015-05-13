@@ -49,6 +49,7 @@ class xinetd (
     ensure     => running,
     enable     => true,
     hasrestart => false,
+    restart    => 'bash -c "/etc/init.d/xinetd stop ; sleep 7 ; /etc/init.d/xinetd start"',
     hasstatus  => true,
     require    => File[$conffile],
   }
