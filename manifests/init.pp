@@ -49,8 +49,15 @@ class xinetd (
     ensure     => running,
     enable     => true,
     hasrestart => false,
-    # LOL OPS-774. xinetd's init script can die in a fucking fire
+    # LOL OPS-774. xinetd's init script leaves much to be desired. Like the 11
+    # o'clock show at the Tropicana, it's racy.
+    #
+    # So we do it by hand. Note that the xinetd packages contain both
+    # /etc/init.d/xinetd and /etc/init/xinetd.conf so it is essential that we
+    # use the 'service' abstraction. Otherwise we can end up with two xinetds!
     restart    => 'bash -c "service xinetd stop ; killall xinetd ; sleep 7 ; service xinetd start"',
+    start      => 'bash -c "service xinetd start"',
+    stop       => 'bash -c "service xinetd stop"',
     hasstatus  => true,
     require    => File[$conffile],
   }
