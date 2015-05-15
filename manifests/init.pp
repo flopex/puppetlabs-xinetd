@@ -55,7 +55,7 @@ class xinetd (
     # So we do it by hand. Note that the xinetd packages contain both
     # /etc/init.d/xinetd and /etc/init/xinetd.conf so it is essential that we
     # use the 'service' abstraction. Otherwise we can end up with two xinetds!
-    restart    => 'bash -c "service xinetd stop ; killall xinetd ; sleep 7 ; service xinetd start"',
+    restart    => 'bash -c "service xinetd stop ; sleep 7 ; service xinetd start"',
     start      => 'bash -c "service xinetd start"',
     stop       => 'bash -c "service xinetd stop"',
     hasstatus  => true,
