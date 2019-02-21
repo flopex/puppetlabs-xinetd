@@ -10,11 +10,39 @@
 #  }
 #
 class xinetd (
-  $confdir       = $xinetd::params::confdir,
-  $confdir_purge = false,
-  $conffile      = $xinetd::params::conffile,
-  $package_name  = $xinetd::params::package_name,
-  $service_name  = $xinetd::params::service_name
+  $confdir            = $xinetd::params::confdir,
+  $conffile           = $xinetd::params::conffile,
+  $package_name       = $xinetd::params::package_name,
+  $package_ensure     = $xinetd::params::package_ensure,
+  $service_name       = $xinetd::params::service_name,
+  $service_restart    = $xinetd::params::service_restart,
+  $service_status     = $xinetd::params::service_status,
+  $service_hasrestart = $xinetd::params::service_hasrestart,
+  $service_hasstatus  = $xinetd::params::service_hasstatus,
+  $enabled            = undef,
+  $disabled           = undef,
+  $log_type           = undef,
+  $log_on_failure     = undef,
+  $log_on_success     = undef,
+  $no_access          = undef,
+  $only_from          = undef,
+  $max_load           = undef,
+  $cps                = undef,
+  $instances          = undef,
+  $per_source         = undef,
+  $bind               = undef,
+  $mdns               = undef,
+  $v6only             = undef,
+  $env                = undef,
+  $passenv            = undef,
+  $groups             = undef,
+  $umask              = undef,
+  $banner             = undef,
+  $banner_fail        = undef,
+  $banner_success     = undef,
+  $purge_confdir      = undef,
+  $service_start      = undef,
+  $service_stop       = undef,
 ) inherits xinetd::params {
 
   File {
@@ -27,9 +55,9 @@ class xinetd (
   file { $confdir:
     ensure  => directory,
     mode    => '0755',
-    recurse => $confdir_purge,
-    purge   => $confdir_purge,
-    force   => $confdir_purge,
+    recurse => $purge_confdir,
+    purge   => $purge_confdir,
+    force   => $purge_confdir,
   }
 
   # Template uses:
@@ -41,25 +69,19 @@ class xinetd (
   }
 
   package { $package_name:
-    ensure => installed,
+    ensure => $package_ensure,
     before => Service[$service_name],
   }
 
   service { $service_name:
     ensure     => running,
     enable     => true,
-    hasrestart => false,
-    # LOL OPS-774. xinetd's init script leaves much to be desired. Like the 11
-    # o'clock show at the Tropicana, it's racy.
-    #
-    # So we do it by hand. Note that the xinetd packages contain both
-    # /etc/init.d/xinetd and /etc/init/xinetd.conf so it is essential that we
-    # use the 'service' abstraction. Otherwise we can end up with two xinetds!
-    restart    => 'bash -c "service xinetd stop ; sleep 7 ; service xinetd start"',
-    start      => 'bash -c "service xinetd start"',
-    stop       => 'bash -c "service xinetd stop"',
-    hasstatus  => true,
+    hasrestart => $service_hasrestart,
+    hasstatus  => $service_hasstatus,
+    restart    => $service_restart,
+    start      => $service_start,
+    stop       => $service_stop,
+    status     => $service_status,
     require    => File[$conffile],
   }
-
 }

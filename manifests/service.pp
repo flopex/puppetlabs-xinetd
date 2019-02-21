@@ -4,40 +4,49 @@
 # all parameters match up with xinetd.conf(5) man page
 #
 # Parameters:
-#   $ensure         - optional - defaults to 'present'
-#   $log_on_success - optional - may contain any combination of
-#                       'PID', 'HOST', 'USERID', 'EXIT', 'DURATION', 'TRAFFIC'
-#   $log_on_failure - optional - may contain any combination of
-#                       'HOST', 'USERID', 'ATTEMPT'
-#   $service_type   - optional - type setting in xinetd
-#                       may contain any combinarion of 'RPC', 'INTERNAL',
-#                       'TCPMUX/TCPMUXPLUS', 'UNLISTED'
-#   $cps            - optional
-#   $flags          - optional
-#   $per_source     - optional
-#   $port           - required - determines the service port
-#   $server         - required - determines the program to execute for this service
-#   $server_args    - optional
-#   $disable        - optional - defaults to "no"
-#   $socket_type    - optional - defaults to "stream"
-#   $protocol       - optional - defaults to "tcp"
-#   $user           - optional - defaults to "root"
-#   $group          - optional - defaults to "root"
-#   $groups         - optional - defaults to "yes"
-#   $instances      - optional - defaults to "UNLIMITED"
-#   $only_from      - optional
-#   $wait           - optional - based on $protocol will default to "yes" for udp and "no" for tcp
-#   $xtype          - optional - determines the "type" of service, see xinetd.conf(5)
-#   $no_access      - optional
-#   $access_times   - optional
-#   $log_type       - optional
-#   $bind           - optional
+#   $ensure                  - optional - defaults to 'present'
+#   $log_on_success          - optional - may contain any combination of
+#                            'PID', 'HOST', 'USERID', 'EXIT', 'DURATION', 'TRAFFIC'
+#   $log_on_success_operator - optional - defaults to '+='.  This is whether or
+#                              not values specified will be add, set or remove
+#                              from the default.
+#   $log_on_failure          - optional - may contain any combination of
+#                             'HOST', 'USERID', 'ATTEMPT'
+#   $log_on_failure_operator - optional - defaults to '+='.  This is whether or
+#                              not values specified will be add, set or remove
+#                              from the default.
+#   $service_type            - optional - type setting in xinetd
+#                             may contain any combinarion of 'RPC', 'INTERNAL',
+#                             'TCPMUX/TCPMUXPLUS', 'UNLISTED'
+#   $cps                     - optional
+#   $flags                   - optional
+#   $per_source              - optional
+#   $port                    - optional - determines the service port (required if service is not listed in /etc/services)
+#   $server                  - optional - determines the program to execute for this service
+#   $server_args             - optional
+#   $disable                 - optional - defaults to "no"
+#   $socket_type             - optional - defaults to "stream"
+#   $protocol                - optional - defaults to "tcp"
+#   $user                    - optional - defaults to "root"
+#   $group                   - optional - defaults to "root"
+#   $use_default_group       - optional - defaults to true
+#   $groups                  - optional - defaults to "yes"
+#   $instances               - optional - defaults to "UNLIMITED"
+#   $only_from               - optional
+#   $wait                    - optional - based on $protocol will default to "yes" for udp and "no" for tcp
+#   $xtype                   - deprecated - use $service_type instead
+#   $no_access               - optional
+#   $access_times            - optional
+#   $log_type                - optional
+#   $bind                    - optional
+#   $nice                    - optional - integer between -20 and 19, inclusive.
+#   $redirect                - optional - ip or hostname and port of the target service
 #
 # Actions:
 #   setups up a xinetd service by creating a file in /etc/xinetd.d/
 #
 # Requires:
-#   $server must be set
+#   $server or $redirect must be set
 #   $port must be set
 #
 # Sample Usage:
@@ -51,46 +60,73 @@
 #     cps         => '100 2',
 #     flags       => 'IPv4',
 #     per_source  => '11',
+#     nice        => 19,
 #   } # xinetd::service
 #
 define xinetd::service (
-  $port,
-  $server,
-  $ensure         = present,
-  $log_on_success = undef,
-  $log_on_failure = undef,
-  $service_type   = undef,
-  $service_name   = $title,
-  $cps            = undef,
-  $disable        = 'no',
-  $flags          = undef,
-  $group          = 'root',
-  $groups         = 'yes',
-  $instances      = 'UNLIMITED',
-  $per_source     = undef,
-  $protocol       = 'tcp',
-  $server_args    = undef,
-  $socket_type    = 'stream',
-  $user           = 'root',
-  $only_from      = undef,
-  $wait           = undef,
-  $xtype          = undef,
-  $no_access      = undef,
-  $access_times   = undef,
-  $log_type       = undef,
-  $bind           = undef
+  $server                           = undef,
+  $port                             = undef,
+  $ensure                           = present,
+  $log_on_success                   = undef,
+  $log_on_success_operator          = '+=',
+  $log_on_failure                   = undef,
+  $log_on_failure_operator          = '+=',
+  $service_type                     = undef,
+  $service_name                     = $title,
+  $cps                              = undef,
+  $disable                          = 'no',
+  $flags                            = undef,
+  $group                            = undef,
+  Boolean $use_default_group        = true,
+  $groups                           = 'yes',
+  $instances                        = 'UNLIMITED',
+  $per_source                       = undef,
+  Enum['tcp', 'udp'] $protocol      = 'tcp',
+  $server_args                      = undef,
+  $socket_type                      = 'stream',
+  $user                             = undef,
+  $only_from                        = undef,
+  $wait                             = undef,
+  $xtype                            = undef,
+  $no_access                        = undef,
+  $access_times                     = undef,
+  $log_type                         = undef,
+  $bind                             = undef,
+  Optional[Integer[-20, 19]] $nice  = undef,
+  $env                              = undef,
+  $passenv                          = undef,
+  $redirect                         = undef,
 ) {
 
-  include xinetd
+  include ::xinetd
+
+  unless ($server or $redirect) {
+    fail('xinetd::service needs either of server or redirect')
+  }
+
+  if $user {
+    $_user = $user
+  } else {
+    $_user = $xinetd::params::default_user
+  }
+
+  if $group or !$use_default_group {
+    $_group = $group
+  } else {
+    $_group = $xinetd::params::default_group
+  }
 
   if $wait {
     $_wait = $wait
   } else {
-    validate_re($protocol, '(tcp|udp)')
     $_wait = $protocol ? {
-      tcp => 'no',
-      udp => 'yes'
+      'tcp' => 'no',
+      'udp' => 'yes'
     }
+  }
+
+  if $xtype {
+    warning ('The $xtype parameter to xinetd::service is deprecated. Use the service_type parameter instead.')
   }
 
   # Template uses:
@@ -109,13 +145,19 @@ define xinetd::service (
   # - $only_from
   # - $per_source
   # - $log_on_success
+  # - $log_on_success_operator
   # - $log_on_failure
+  # - $log_on_failure_operator
   # - $cps
   # - $flags
-  # - $xtype
+  # - $xtype (deprecated)
   # - $no_access
   # - $access_types
   # - $log_type
+  # - $nice
+  # - $env
+  # - $passenv
+  # - $redirect
   file { "${xinetd::confdir}/${title}":
     ensure  => $ensure,
     owner   => 'root',
