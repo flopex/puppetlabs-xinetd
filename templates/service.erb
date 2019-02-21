@@ -3,6 +3,9 @@
 
 service <%= @service_name %>
 {
+<% if @id -%>
+        id              = <%= @id %>
+<% end -%>
 <% if @port -%>
         port            = <%= @port %>
 <% end -%>
@@ -71,5 +74,29 @@ service <%= @service_name %>
 <% end -%>
 <% if @redirect -%>
         redirect        = <%= @redirect %>
+<% end -%>
+<% if @deny_time -%>
+        deny_time       = <%= @deny_time %>
+<% end -%>
+<% if @umask -%>
+        umask           = <%= @umask %>
+<% end -%>
+<% if @rlimit_as -%>
+        rlimit_as       = <%= @rlimit_as %>
+<% end -%>
+<% if @rlimit_files -%>
+        rlimit_files    = <%= @rlimit_files %>
+<% end -%>
+<% if @rlimit_cpu -%>
+        rlimit_cpu      = <%= @rlimit_cpu %>
+<% end -%>
+<% if @rlimit_data -%>
+        rlimit_data     = <%= @rlimit_data %>
+<% end -%>
+<% if @rlimit_rss -%>
+        rlimit_rss      = <%= @rlimit_rss %>
+<% end -%>
+<% if @rlimit_stack -%>
+        rlimit_stack    = <%= @rlimit_stack %>
 <% end -%>
 }
